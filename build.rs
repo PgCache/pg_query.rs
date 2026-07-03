@@ -27,6 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Copy the relevant source files to the OUT_DIR
     let source_paths = vec![
         build_path.join(LIBRARY_NAME).with_extension("h"),
+        build_path.join("postgres_deparse.h"),
         build_path.join("Makefile"),
         build_path.join("src"),
         build_path.join("protobuf"),
@@ -67,6 +68,80 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .generate()
         .map_err(|_| "Unable to generate bindings")?
         .write_to_file(out_dir.join("bindings.rs"))?;
+
+    // Generate Rust layouts for the PG raw parse-tree node structs, so callers
+    // of pg_query_parse_raw_scoped can walk the tree without the protobuf
+    // round-trip. Allowlist the nodes that appear in raw SELECT trees;
+    // bindgen pulls in their referenced types/enums transitively.
+    println!("cargo:rerun-if-changed=pg_nodes_wrapper.h");
+    let node_types = [
+        "RawStmt",
+        "List",
+        "ListCell",
+        "Node",
+        "NodeTag",
+        "Alias",
+        "RangeVar",
+        "TableFunc",
+        "IntoClause",
+        "Var",
+        "Const",
+        "Param",
+        "Aggref",
+        "FuncCall",
+        "A_Expr",
+        "BoolExpr",
+        "SubLink",
+        "CaseExpr",
+        "CaseWhen",
+        "CoalesceExpr",
+        "MinMaxExpr",
+        "NullTest",
+        "BooleanTest",
+        "TypeCast",
+        "CollateClause",
+        "A_Const",
+        "ColumnRef",
+        "ParamRef",
+        "A_Star",
+        "A_Indices",
+        "A_Indirection",
+        "A_ArrayExpr",
+        "ResTarget",
+        "MultiAssignRef",
+        "SortBy",
+        "WindowDef",
+        "RangeSubselect",
+        "RangeFunction",
+        "TypeName",
+        "ColumnDef",
+        "JoinExpr",
+        "FromExpr",
+        "SelectStmt",
+        "SetOperation",
+        "VariableSetStmt",
+        "DiscardStmt",
+        "TransactionStmt",
+        "CommonTableExpr",
+        "WithClause",
+        "Integer",
+        "Float",
+        "Boolean",
+        "String",
+        "BitString",
+        "GroupingSet",
+        "FuncCall",
+    ];
+    let mut node_bindings = bindgen::Builder::default()
+        .header("pg_nodes_wrapper.h")
+        .clang_arg(format!("-I{}", out_dir.join("src/postgres/include").display()))
+        .clang_arg(format!("-I{}", out_dir.join("src/include").display()))
+        .layout_tests(false)
+        .generate_comments(false);
+    for ty in node_types {
+        node_bindings = node_bindings.allowlist_type(ty);
+    }
+    node_bindings.generate().map_err(|_| "Unable to generate node bindings")?.write_to_file(out_dir.join("pg_nodes.rs"))?;
 
     // Only generate protobuf bindings if protoc is available
     let protoc_exists = Command::new("protoc").arg("--version").status().is_ok();

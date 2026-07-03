@@ -47,7 +47,9 @@ mod node_structs;
 mod parse_result;
 #[rustfmt::skip]
 pub mod protobuf;
+pub mod pg_nodes;
 mod query;
+mod raw_scoped;
 mod truncate;
 
 pub use error::*;
@@ -56,6 +58,7 @@ pub use node_mut::*;
 pub use node_ref::*;
 pub use parse_result::*;
 pub use query::*;
+pub use raw_scoped::*;
 pub use truncate::*;
 
 pub use protobuf::Node;
