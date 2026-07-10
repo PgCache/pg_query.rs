@@ -22,7 +22,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! pg_query = "5.1"
+//! pg_query = "6.1"
 //! ```
 //!
 //! # Example: Parsing a query
@@ -50,6 +50,8 @@ pub mod protobuf;
 pub mod pg_nodes;
 mod query;
 mod raw_scoped;
+mod summary;
+mod summary_result;
 mod truncate;
 
 pub use error::*;
@@ -59,6 +61,8 @@ pub use node_ref::*;
 pub use parse_result::*;
 pub use query::*;
 pub use raw_scoped::*;
+pub use summary::*;
+pub use summary_result::*;
 pub use truncate::*;
 
 pub use protobuf::Node;
