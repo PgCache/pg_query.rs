@@ -74,7 +74,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pg_nodes::{List, Node, NodeTag, RangeVar, RawStmt, SelectStmt};
+    use crate::pg_nodes::{List, Node, NodeTag_T_RangeVar, NodeTag_T_SelectStmt, RangeVar, RawStmt, SelectStmt};
 
     /// Collect the `ptr_value` of each cell in a PG `List *` (the array-backed
     /// PG13+ representation). Empty for a NULL list (PG's NIL).
@@ -93,14 +93,14 @@ mod tests {
             let stmts = list_ptrs(tree as *const List);
             let raw = stmts[0] as *const RawStmt;
             let stmt_node = (*raw).stmt as *const Node;
-            assert_eq!((*stmt_node).type_, NodeTag::T_SelectStmt, "top-level node should be a SelectStmt");
+            assert_eq!((*stmt_node).type_, NodeTag_T_SelectStmt, "top-level node should be a SelectStmt");
 
             let select = stmt_node as *const SelectStmt;
             let targets = list_ptrs((*select).targetList).len();
 
             let from = list_ptrs((*select).fromClause);
             let range_var = from[0] as *const RangeVar;
-            assert_eq!((*range_var).type_, NodeTag::T_RangeVar);
+            assert_eq!((*range_var).type_, NodeTag_T_RangeVar);
             let relname = CStr::from_ptr((*range_var).relname).to_string_lossy().into_owned();
 
             (stmts.len(), targets, relname)

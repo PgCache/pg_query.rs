@@ -11,8 +11,17 @@ static SOURCE_DIRECTORY: &str = "libpg_query";
 static LIBRARY_NAME: &str = "pg_query";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // return if proto file changes
+    // Track every input the C build and the two bindgen passes read. Without a
+    // complete set, cargo reuses a stale OUT_DIR (stale bindings.rs/pg_nodes.rs)
+    // when only the vendored libpg_query headers change — e.g. after a submodule
+    // bump on a reused build directory.
+    println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=pg_nodes_wrapper.h");
     println!("cargo:rerun-if-changed=libpg_query/protobuf/pg_query.proto");
+    println!("cargo:rerun-if-changed=libpg_query/pg_query.h");
+    println!("cargo:rerun-if-changed=libpg_query/postgres_deparse.h");
+    println!("cargo:rerun-if-changed=libpg_query/src");
+    println!("cargo:rerun-if-changed=raw_scoped");
 
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
     let build_path = Path::new(".").join(SOURCE_DIRECTORY);
@@ -37,6 +46,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let copy_options = CopyOptions { overwrite: true, ..CopyOptions::default() };
 
     fs_extra::copy_items(&source_paths, &out_dir, &copy_options)?;
+
+    // pg_query_parse_raw_scoped lives in this fork, not upstream libpg_query.
+    // Copy it into the OUT_DIR src tree so the `src/*.c` glob below compiles it
+    // against the vendored libpg_query internals it includes.
+    for entry in std::fs::read_dir(Path::new(".").join("raw_scoped"))? {
+        let path = entry?.path();
+        if let Some(name) = path.file_name() {
+            std::fs::copy(&path, out_dir.join("src").join(name))?;
+        }
+    }
 
     // Compile the C library.
     let mut build = cc::Build::new();
@@ -73,7 +92,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // of pg_query_parse_raw_scoped can walk the tree without the protobuf
     // round-trip. Allowlist the nodes that appear in raw SELECT trees;
     // bindgen pulls in their referenced types/enums transitively.
-    println!("cargo:rerun-if-changed=pg_nodes_wrapper.h");
     let node_types = [
         "RawStmt",
         "List",
