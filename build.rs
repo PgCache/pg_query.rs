@@ -148,6 +148,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "BitString",
         "GroupingSet",
         "FuncCall",
+        // DML/utility statement nodes for pgcache's write classification
+        // (read-after-write tracking). Field structure only; the SELECT
+        // converter never descends into these.
+        "InsertStmt",
+        "UpdateStmt",
+        "DeleteStmt",
+        "MergeStmt",
+        "CopyStmt",
+        "TruncateStmt",
+        "ExplainStmt",
     ];
     let mut node_bindings = bindgen::Builder::default()
         .header("pg_nodes_wrapper.h")
