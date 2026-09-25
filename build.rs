@@ -158,6 +158,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "CopyStmt",
         "TruncateStmt",
         "ExplainStmt",
+        // Option lists on BEGIN / SET TRANSACTION / SET SESSION CHARACTERISTICS
+        // (isolation-level tracking for in-transaction serving).
+        "DefElem",
     ];
     let mut node_bindings = bindgen::Builder::default()
         .header("pg_nodes_wrapper.h")
