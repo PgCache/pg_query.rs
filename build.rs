@@ -161,6 +161,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Option lists on BEGIN / SET TRANSACTION / SET SESSION CHARACTERISTICS
         // (isolation-level tracking for in-transaction serving).
         "DefElem",
+        // CREATE INDEX, converted into the rope for the cache-side index
+        // rewrite (PGC-575).
+        "IndexStmt",
+        "IndexElem",
     ];
     let mut node_bindings = bindgen::Builder::default()
         .header("pg_nodes_wrapper.h")
