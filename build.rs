@@ -137,6 +137,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "SelectStmt",
         "SetOperation",
         "VariableSetStmt",
+        // CURRENT_USER / SESSION_USER session terms.
+        "SQLValueFunction",
         "DiscardStmt",
         "TransactionStmt",
         "CommonTableExpr",
